@@ -13,6 +13,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jraymakers/jr.git"
+    "url": "git://github.com/jraymakers/jr.git"
   }
 }
