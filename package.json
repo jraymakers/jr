@@ -3,7 +3,7 @@
   "description": "A job runner with support for asynchrony and dependencies.",
   "keywords": ["task, job, runner, async"],
   "author": "Jeff Raymakers",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "./lib/index.js",
   "bin": {
     "jr": "./bin/jr"
