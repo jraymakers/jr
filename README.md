@@ -1,6 +1,6 @@
 # JR
 
-A Node-based job runner with support for asynchrony and dependencies.
+A node.js-based job runner with support for asynchrony and dependencies.
 
 ### Installation
 
@@ -16,7 +16,7 @@ Or locally:
 
 For command line use with a local installation, ensure node_modules/.bin is on your path.
 
-JR has only one dependency: the excellent [async](https://github.com/caolan/async) library.  Job descriptions follow the conventions of [async.auto](https://github.com/caolan/async#auto).
+JR is powered by the excellent [async](https://github.com/caolan/async) library.  Job descriptions follow the conventions of [async.auto](https://github.com/caolan/async#auto).
 
 ### Usage
 

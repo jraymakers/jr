@@ -1,13 +1,51 @@
 #!/usr/bin/env node
 
+var _ = require('underscore');
+var program = require('commander');
 var jr = require('../');
 
+program
+  .version('0.0.5')
+  .usage('[options] <jobs>')
+  .option('-l, --list', 'List jobs')
+  .parse(process.argv);
+
+function spaces(n) {
+  if (n > 1) {
+    return new Array(n).join(' ');
+  } else {
+    return '';
+  }
+}
+
+if (program.list) {
+  jr.load({}, function(err, jobs) {
+    if (err) {
+      console.log('[jr] ' + err);
+    } else {
+      var jobNames = _.keys(jobs).sort();
+      var maxLength = _.max(_.map(jobNames, function (jobName) {
+        return jobName.length;
+      }));
+      console.log();
+      console.log('Job:' + spaces(maxLength) + '  Needs:');
+      _.each(jobNames, function (jobName) {
+        var needs = jobs[jobName].needs;
+        if (needs) {
+          console.log('  ' + jobName + spaces(maxLength - jobName.length) + '    ' + needs.join(', '));
+        } else {
+          console.log('  ' + jobName);
+        }
+      });
+      console.log();
+    }
+  });
+}
+
 jr.run({
-  jobNames: process.argv.slice(2)
+  jobNames: program.args
 }, function (err) {
   if (err) {
     console.log('[jr] ' + err);
-  } else {
-    console.log('[jr] Done');
   }
 });
