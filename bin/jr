@@ -5,7 +5,7 @@ var program = require('commander');
 var jr = require('../');
 
 program
-  .version('0.0.5')
+  .version('0.1.0')
   .usage('[options] <jobs>')
   .option('-l, --list', 'List jobs')
   .parse(process.argv);
