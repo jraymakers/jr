@@ -5,9 +5,10 @@ var program = require('commander');
 var jr = require('../');
 
 program
-  .version('0.1.0')
+  .version('0.2.0')
   .usage('[options] <jobs>')
   .option('-l, --list', 'List jobs')
+  .option('-t, --trace', 'Log trace messages')
   .parse(process.argv);
 
 function spaces(n) {
@@ -19,10 +20,11 @@ function spaces(n) {
 }
 
 if (program.list) {
-  jr.load({}, function(err, jobs) {
+  jr.load({}, function(err, result) {
     if (err) {
       console.log('[jr] ' + err);
     } else {
+      var jobs = result.jobs;
       var jobNames = _.keys(jobs).sort();
       var maxLength = _.max(_.map(jobNames, function (jobName) {
         return jobName.length;
@@ -42,8 +44,23 @@ if (program.list) {
   });
 }
 
+var beforeJob = null;
+var afterJob = null;
+if (program.trace) {
+  beforeJob = function(cb, jobName) {
+    console.log('[jr] Running job: ' + jobName);
+    cb();
+  };
+  afterJob = function(cb, jobName) {
+    console.log('[jr] Finished job: ' + jobName);
+    cb();
+  };
+}
+
 jr.run({
-  jobNames: program.args
+  jobNames: program.args,
+  beforeJob: beforeJob,
+  afterJob: afterJob
 }, function (err) {
   if (err) {
     console.log('[jr] ' + err);

@@ -14,7 +14,7 @@ describe('jr', function () {
       }
     }
     
-    it('should produce no results when given no jobsNames', function (done) {
+    it('should produce no results when given no jobNames', function (done) {
       jr.run({
         jobs: { }
       }, function (err, results) {
@@ -133,6 +133,36 @@ describe('jr', function () {
           expect(bCount).to.equal(1);
           expect(cCount).to.equal(1);
           expect(dCount).to.equal(1);
+        });
+      });
+    });
+    
+    it('should call beforeJob and afterJob', function (done) {
+      var beforeName = null;
+      var afterName = null;
+      jr.run({
+        jobNames: ['a'],
+        jobs: {
+          a: {
+            action: function (cb) {
+              cb(null, 'a results');
+            }
+          }
+        },
+        beforeJob: function (cb, jobName) {
+          beforeName = jobName;
+          cb();
+        },
+        afterJob: function (cb, jobName) {
+          afterName = jobName;
+          cb();
+        }
+      }, function (err, results) {
+        check(done, function () {
+          expect(!err).to.be.ok;
+          expect(results).to.deep.equal({ a: 'a results' });
+          expect(beforeName).to.equal('a');
+          expect(afterName).to.equal('a');
         });
       });
     });
