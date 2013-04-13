@@ -3,7 +3,7 @@
   "description": "A job runner with support for asynchrony and dependencies.",
   "keywords": ["async", "job", "runner", "task"],
   "author": "Jeff Raymakers",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "./lib/index.js",
   "bin": {
     "jr": "./bin/jr"
@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "chai": "1.5.x",
-    "mocha": "1.8.x"
+    "mocha": "1.9.x"
   },
   "repository": {
     "type": "git",

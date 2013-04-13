@@ -24,6 +24,19 @@ JR can be used either as a command line tool or as a library.
 
 #### Command Line
 
+```
+> jr -h
+
+  Usage: jr [options] <jobs>
+
+  Options:
+
+    -h, --help     output usage information
+    -V, --version  output the version number
+    -l, --list     list jobs
+    -t, --trace    log trace messages
+```
+
 On the command line, JR reads a jobs.js file from the current directory, which is just a node module exporting a set of jobs:
 
 ```javascript

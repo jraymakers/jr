@@ -5,10 +5,10 @@ var program = require('commander');
 var jr = require('../');
 
 program
-  .version('0.2.0')
+  .version('0.2.1')
   .usage('[options] <jobs>')
-  .option('-l, --list', 'List jobs')
-  .option('-t, --trace', 'Log trace messages')
+  .option('-l, --list', 'list jobs')
+  .option('-t, --trace', 'log trace messages')
   .parse(process.argv);
 
 function spaces(n) {
