@@ -1,27 +1,36 @@
 {
   "name": "jr",
-  "description": "A job runner with support for asynchrony and dependencies.",
-  "keywords": ["async", "job", "runner", "task"],
+  "description": "A job runner with support for dependencies and parallelism.",
+  "keywords": [
+    "dependency",
+    "dependencies",
+    "job",
+    "jobs",
+    "parallel",
+    "parallelism",
+    "run",
+    "runner",
+    "task",
+    "tasks"
+  ],
   "author": "Jeff Raymakers",
-  "version": "0.2.3",
-  "main": "./lib/index.js",
+  "version": "0.5.0",
+  "license": "MIT",
+  "main": "./lib/jr.js",
   "bin": {
     "jr": "./bin/jr"
   },
   "dependencies": {
-    "async": "0.9.x",
-    "commander": "2.2.x",
-    "underscore": "1.6.x"
   },
   "devDependencies": {
-    "chai": "1.9.x",
-    "mocha": "1.20.x"
+    "tape": "4.6.2",
+    "tap-dot": "1.0.5"
   },
   "repository": {
     "type": "git",
     "url": "git://github.com/jraymakers/jr.git"
   },
   "scripts": {
-    "test": "mocha -R list"
+    "test": "node ./test/test-jr.js | tap-dot"
   }
 }
