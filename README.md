@@ -36,27 +36,44 @@ JR can be used either as a command line tool or as a library.
 ```
 
 When run from the command line, JR looks for a file in the current directory named "jobs.js".
+
 This file should be a node module that exports a JR job definition function.
+
 A JR job definition function takes one parameter, "jr", which has some utility functions,
 and returns an object containing job definitions.
+
 Each job defintion is an object with either of both of two properties:
 
 "needs"
+
 This is an array of strings.
+
 Each string must be the name of another job in this set of job descriptions.
+
 These indicate which other jobs are needed by this job, and thus must be run first.
+
 The order of the needed jobs in the "needs" array is unimportant.
 
 "action"
+
 This is a function that defines what the job does.
+
 It takes two arguments: "results" and "log".
+
 The "results" argument contains the results returned by the "needed" jobs.
+
 The keys of the "results" object are the names of the "needed" jobs.
+
 The "log" argument is a function that the action can call to emit log messages.
+
 The log messages will be prepended by the job name, to distinguish messages from jobs running in parallel.
+
 The action function can return a Promise.  If it does, the job will not complete until the Promise is resolved or rejected.
+
 If the action does not return a promise, then the job will be complete when the function returns.
+
 The result of the action is either the return value or the value of the resolved Promise.
+
 If an action function rejects a Promise, all further job execution will stop.
 
 Here's an example:
@@ -131,7 +148,7 @@ var jobs = {
   },
   outDir: {
     needs: ['config'],
-    action: (results) => {}
+    action: (results) => {
       // setup output directory
     }
   },
