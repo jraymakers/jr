@@ -127,6 +127,18 @@ test('runJobs given multiple jobs and names of multiple job should run all neede
   ]);
 });
 
+test('runJobs given a job name that returns a broken promise should return a broken promise', (t) => {
+  t.plan(1);
+  const jobDefs = {
+    a: { action: () => Promise.reject('error from a') }
+  };
+  jr.runJobs(jobDefs, ['a'])
+    .catch((err) => {
+      t.equal(err, 'error from a');
+      t.end();
+    })
+})
+
 // runJobsFromFile
 
 function testRunJobsFromFile(t, jobsFileName, jobNamesToRun, expectedLogOutput) {
