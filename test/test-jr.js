@@ -16,6 +16,14 @@ const diamondJobs = {
   e: { needs: ['b'], action: (res, log) => log('e') }
 };
 
+const launch = {
+  useLaunch: { action: jr.launch('echo', ['message']) }
+};
+
+const launcher = {
+  useLauncher: { action: (results, log) => jr.launcher('echo', ['message'])(log) }
+};
+
 // test helpers
 
 function expectDef(t, actual, expected) {
@@ -137,7 +145,19 @@ test('runJobs given a job name that returns a broken promise should return a bro
       t.equal(err, 'error from a');
       t.end();
     })
-})
+});
+
+test('runJobs given a job that uses launch launches that process', (t) => {
+  testRunJobs(t, launch, ['useLaunch'], [
+    { jobName: 'useLaunch', message: 'message\n' }
+  ]);
+});
+
+test('runJobs given a job that uses launcher launches that process', (t) => {
+  testRunJobs(t, launcher, ['useLauncher'], [
+    { jobName: 'useLauncher', message: 'message\n' }
+  ]);
+});
 
 // runJobsFromFile
 
