@@ -149,13 +149,13 @@ test('runJobs given a job name that returns a broken promise should return a bro
 
 test('runJobs given a job that uses launch launches that process', (t) => {
   testRunJobs(t, launch, ['useLaunch'], [
-    { jobName: 'useLaunch', message: 'message\n' }
+    { jobName: 'useLaunch', message: 'message' }
   ]);
 });
 
 test('runJobs given a job that uses launcher launches that process', (t) => {
   testRunJobs(t, launcher, ['useLauncher'], [
-    { jobName: 'useLauncher', message: 'message\n' }
+    { jobName: 'useLauncher', message: 'message' }
   ]);
 });
 
