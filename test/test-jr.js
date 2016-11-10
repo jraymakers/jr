@@ -16,12 +16,28 @@ const diamondJobs = {
   e: { needs: ['b'], action: (res, log) => log('e') }
 };
 
-const launch = {
-  useLaunch: { action: jr.launch('echo', ['message']) }
+const commandAction = {
+  run: { action: jr.commandAction('echo message') }
 };
 
-const launcher = {
-  useLauncher: { action: (results, log) => jr.launcher('echo', ['message'])(log) }
+const runCommandFn = {
+  run: { action: (results, log) => jr.runCommandFn('echo message')(log) }
+};
+
+const processAction = {
+  run: { action: jr.processAction('echo', ['message']) }
+};
+
+const runProcessFn = {
+  run: { action: (results, log) => jr.runProcessFn('echo', ['message'])(log) }
+};
+
+const scriptAction = {
+  run: { action: jr.scriptAction(path.join(__dirname, 'files', 'echo'), ['message']) }
+};
+
+const runScriptFn = {
+  run: { action: (results, log) => jr.runScriptFn(path.join(__dirname, 'files', 'echo'), ['message'])(log) }
 };
 
 // test helpers
@@ -147,15 +163,39 @@ test('runJobs given a job name that returns a broken promise should return a bro
     })
 });
 
-test('runJobs given a job that uses launch launches that process', (t) => {
-  testRunJobs(t, launch, ['useLaunch'], [
-    { jobName: 'useLaunch', message: 'message' }
+test('runJobs given a job that uses commandAction runs the given command', (t) => {
+  testRunJobs(t, commandAction, ['run'], [
+    { jobName: 'run', message: 'message' }
   ]);
 });
 
-test('runJobs given a job that uses launcher launches that process', (t) => {
-  testRunJobs(t, launcher, ['useLauncher'], [
-    { jobName: 'useLauncher', message: 'message' }
+test('runJobs given a job that uses runCommandFn runs the given command', (t) => {
+  testRunJobs(t, runCommandFn, ['run'], [
+    { jobName: 'run', message: 'message' }
+  ]);
+});
+
+test('runJobs given a job that uses processAction runs the given command', (t) => {
+  testRunJobs(t, processAction, ['run'], [
+    { jobName: 'run', message: 'message' }
+  ]);
+});
+
+test('runJobs given a job that uses runProcessFn runs the given command', (t) => {
+  testRunJobs(t, runProcessFn, ['run'], [
+    { jobName: 'run', message: 'message' }
+  ]);
+});
+
+test('runJobs given a job that uses scriptAction runs the given command', (t) => {
+  testRunJobs(t, scriptAction, ['run'], [
+    { jobName: 'run', message: 'message' }
+  ]);
+});
+
+test('runJobs given a job that uses runScriptFn runs the given command', (t) => {
+  testRunJobs(t, runScriptFn, ['run'], [
+    { jobName: 'run', message: 'message' }
   ]);
 });
 
