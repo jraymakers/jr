@@ -2,6 +2,8 @@ const jr = require('../');
 const path = require('path');
 const test = require('tape');
 
+const testFilesDir = path.join(__dirname, 'files');
+
 // test data
 
 const singleJob = {
@@ -33,11 +35,19 @@ const runProcessFn = {
 };
 
 const scriptAction = {
-  run: { action: jr.scriptAction(path.join(__dirname, 'files', 'echo'), ['message']) }
+  run: { action: jr.scriptAction(path.join(testFilesDir, 'echo'), ['message']) }
 };
 
 const runScriptFn = {
-  run: { action: (results, log) => jr.runScriptFn(path.join(__dirname, 'files', 'echo'), ['message'])(log) }
+  run: { action: (results, log) => jr.runScriptFn(path.join(testFilesDir, 'echo'), ['message'])(log) }
+};
+
+const scriptActionExitCode0 = {
+  run: { action: jr.scriptAction(path.join(testFilesDir, 'exitCode'), ['0']) }
+};
+
+const scriptActionExitCode1 = {
+  run: { action: jr.scriptAction(path.join(testFilesDir, 'exitCode'), ['1']) }
 };
 
 // test helpers
@@ -79,14 +89,14 @@ test('loadJobsFromFile given empty string argument should throw', (t) => {
 });
 
 test('loadJobsFromFile given empty file should throw', (t) => {
-  const p = path.join(__dirname, 'files', 'empty.js');
+  const p = path.join(testFilesDir, 'empty.js');
   t.throws(() => jr.loadJobsFromFile(p),
     new RegExp(`Error loading jobs file "${p}": Error: Must export a function.`));
   t.end();
 });
 
 test('loadJobsFromFile given file with single job def should return valid job defs', (t) => {
-  const p = path.join(__dirname, 'files', 'single-job.js');
+  const p = path.join(testFilesDir, 'single-job.js');
   const jobDefs = jr.loadJobsFromFile(p);
   t.ok(jobDefs);
   expectDef(t, jobDefs.a, { action: true });
@@ -94,7 +104,7 @@ test('loadJobsFromFile given file with single job def should return valid job de
 });
 
 test('loadJobsFromFile given jobs file with multiple job defs should return valid job defs', (t) => {
-  const p = path.join(__dirname, 'files', 'diamond.js');
+  const p = path.join(testFilesDir, 'diamond.js');
   const jobDefs = jr.loadJobsFromFile(p);
   t.ok(jobDefs);
   expectDef(t, jobDefs.a, { action: true });
@@ -106,7 +116,7 @@ test('loadJobsFromFile given jobs file with multiple job defs should return vali
 });
 
 test('loadJobsFromFile given jobs file with import should return valid job definitions', (t) => {
-  const p = path.join(__dirname, 'files', 'print-config.js');
+  const p = path.join(testFilesDir, 'print-config.js');
   const jobDefs = jr.loadJobsFromFile(p);
   t.ok(jobDefs);
   expectDef(t, jobDefs.config, { action: true });
@@ -123,6 +133,9 @@ function testRunJobs(t, jobDefs, jobNamesToRun, expectedLogOutput) {
     .then(() => {
       t.deepEqual(logger.output, expectedLogOutput);
       t.end();
+    })
+    .catch((err) => {
+      t.fail(err);
     });
 }
 
@@ -152,16 +165,20 @@ test('runJobs given multiple jobs and names of multiple job should run all neede
 });
 
 test('runJobs given a job name that returns a broken promise should return a broken promise', (t) => {
-  t.plan(1);
+  t.plan(2);
+  const error = 17;
   const jobDefs = {
-    a: { action: () => Promise.reject('error from a') }
+    a: { action: () => Promise.reject(error) }
   };
   jr.runJobs(jobDefs, ['a'])
     .catch((err) => {
-      t.equal(err, 'error from a');
+      t.ok(err instanceof Error);
+      t.equal(err.message, `Job "a" exited with error: ${error}`);
       t.end();
     })
 });
+
+// runJobs with child process functions
 
 test('runJobs given a job that uses commandAction runs the given command', (t) => {
   testRunJobs(t, commandAction, ['run'], [
@@ -199,11 +216,26 @@ test('runJobs given a job that uses runScriptFn runs the given command', (t) => 
   ]);
 });
 
+test('runJobs given a job that uses a scriptAction to return an exit code of 0 succeeds', (t) => {
+  testRunJobs(t, scriptActionExitCode0, ['run'], [
+  ]);
+});
+
+test('runJobs given a job that uses a scriptAction to return an exit code of 1 fails', (t) => {
+  t.plan(2);
+  jr.runJobs(scriptActionExitCode1, ['run'])
+    .catch((err) => {
+      t.ok(err instanceof Error);
+      t.equal(err.message, `Job "run" exited with error: 1`);
+      t.end();
+    })
+});
+
 // runJobsFromFile
 
 function testRunJobsFromFile(t, jobsFileName, jobNamesToRun, expectedLogOutput) {
   t.plan(1);
-  const p = path.join(__dirname, 'files', jobsFileName);
+  const p = path.join(testFilesDir, jobsFileName);
   const logger = createLogger();
   jr.runJobsFromFile(p, jobNamesToRun, { log: logger.log })
     .then(() => {
