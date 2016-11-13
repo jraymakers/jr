@@ -1,3 +1,3 @@
 module.exports = (jr) => ({
-  a: { action: (res, log) => log('a') }
+  a: { action: (j) => j.logger.log('a') }
 });

@@ -7,15 +7,15 @@ const testFilesDir = path.join(__dirname, 'files');
 // test data
 
 const singleJob = {
-  a: { action: (res, log) => log('a') }
+  a: { action: (j) => j.logger.log('a') }
 };
 
 const diamondJobs = {
-  a: { action: (res, log) => log('a') },
-  b: { needs: ['a'], action: (res, log) => log('b') },
-  c: { needs: ['a'], action: (res, log) => log('c') },
-  d: { needs: ['b', 'c'], action: (res, log) => log('d') },
-  e: { needs: ['b'], action: (res, log) => log('e') }
+  a: { action: (j) => j.logger.log('a') },
+  b: { needs: ['a'], action: (j) => j.logger.log('b') },
+  c: { needs: ['a'], action: (j) => j.logger.log('c') },
+  d: { needs: ['b', 'c'], action: (j) => j.logger.log('d') },
+  e: { needs: ['b'], action: (j) => j.logger.log('e') }
 };
 
 const commandAction = {
@@ -23,7 +23,7 @@ const commandAction = {
 };
 
 const runCommandFn = {
-  run: { action: (results, log) => jr.runCommandFn('echo message')(log) }
+  run: { action: (j) => jr.runCommandFn('echo message')(j.logger) }
 };
 
 const processAction = {
@@ -31,7 +31,7 @@ const processAction = {
 };
 
 const runProcessFn = {
-  run: { action: (results, log) => jr.runProcessFn('echo', ['message'])(log) }
+  run: { action: (j) => jr.runProcessFn('echo', ['message'])(j.logger) }
 };
 
 const scriptAction = {
@@ -39,7 +39,7 @@ const scriptAction = {
 };
 
 const runScriptFn = {
-  run: { action: (results, log) => jr.runScriptFn(path.join(testFilesDir, 'echo'), ['message'])(log) }
+  run: { action: (j) => jr.runScriptFn(path.join(testFilesDir, 'echo'), ['message'])(j.logger) }
 };
 
 const scriptActionExitCode0 = {
@@ -66,10 +66,15 @@ function expectDef(t, actual, expected) {
   }
 }
 
-function createLogger() {
+function makeMemoryLogger() {
   const output = [];
   return {
-    log: (jobName, message) => output.push({ jobName: jobName, message: message }),
+    makeLogger: (prefix) => ({
+      error: (message) => output.push({ type: 'error', prefix: prefix, message: message }),
+      info:  (message) => output.push({ type: 'info',  prefix: prefix, message: message }),
+      log:   (message) => output.push({ type: 'log',   prefix: prefix, message: message }),
+      warn:  (message) => output.push({ type: 'warn',  prefix: prefix, message: message })
+    }),
     output: output
   };
 }
@@ -128,10 +133,10 @@ test('loadJobsFromFile given jobs file with import should return valid job defin
 
 function testRunJobs(t, jobDefs, jobNamesToRun, expectedLogOutput) {
   t.plan(1);
-  const logger = createLogger();
-  jr.runJobs(jobDefs, jobNamesToRun, { log: logger.log })
+  const memoryLogger = makeMemoryLogger();
+  jr.runJobs(jobDefs, jobNamesToRun, { makeLogger: memoryLogger.makeLogger })
     .then(() => {
-      t.deepEqual(logger.output, expectedLogOutput);
+      t.deepEqual(memoryLogger.output, expectedLogOutput);
       t.end();
     })
     .catch((err) => {
@@ -141,26 +146,26 @@ function testRunJobs(t, jobDefs, jobNamesToRun, expectedLogOutput) {
 
 test('runJobs given a single job and name of that job should run that job', (t) => {
   testRunJobs(t, singleJob, ['a'], [
-    { jobName: 'a', message: 'a' }
+    { type: 'log', prefix: 'a', message: 'a' }
   ]);
 });
 
 test('runJobs given multiple jobs and name of a job should run all needed jobs', (t) => {
   testRunJobs(t, diamondJobs, ['d'], [
-    { jobName: 'a', message: 'a' },
-    { jobName: 'b', message: 'b' },
-    { jobName: 'c', message: 'c' },
-    { jobName: 'd', message: 'd' }
+    { type: 'log', prefix: 'a', message: 'a' },
+    { type: 'log', prefix: 'b', message: 'b' },
+    { type: 'log', prefix: 'c', message: 'c' },
+    { type: 'log', prefix: 'd', message: 'd' }
   ]);
 });
 
 test('runJobs given multiple jobs and names of multiple job should run all needed jobs', (t) => {
   testRunJobs(t, diamondJobs, ['d','e'], [
-    { jobName: 'a', message: 'a' },
-    { jobName: 'b', message: 'b' },
-    { jobName: 'c', message: 'c' },
-    { jobName: 'e', message: 'e' },
-    { jobName: 'd', message: 'd' }
+    { type: 'log', prefix: 'a', message: 'a' },
+    { type: 'log', prefix: 'b', message: 'b' },
+    { type: 'log', prefix: 'c', message: 'c' },
+    { type: 'log', prefix: 'e', message: 'e' },
+    { type: 'log', prefix: 'd', message: 'd' }
   ]);
 });
 
@@ -173,7 +178,7 @@ test('runJobs given a job name that returns a broken promise should return a bro
   jr.runJobs(jobDefs, ['a'])
     .catch((err) => {
       t.ok(err instanceof Error);
-      t.equal(err.message, `Job "a" exited with error: ${error}`);
+      t.equal(err.message, `Job "a" returned error: ${error}`);
       t.end();
     })
 });
@@ -182,37 +187,37 @@ test('runJobs given a job name that returns a broken promise should return a bro
 
 test('runJobs given a job that uses commandAction runs the given command', (t) => {
   testRunJobs(t, commandAction, ['run'], [
-    { jobName: 'run', message: 'message' }
+    { type: 'log', prefix: 'run', message: 'message' }
   ]);
 });
 
 test('runJobs given a job that uses runCommandFn runs the given command', (t) => {
   testRunJobs(t, runCommandFn, ['run'], [
-    { jobName: 'run', message: 'message' }
+    { type: 'log', prefix: 'run', message: 'message' }
   ]);
 });
 
 test('runJobs given a job that uses processAction runs the given command', (t) => {
   testRunJobs(t, processAction, ['run'], [
-    { jobName: 'run', message: 'message' }
+    { type: 'log', prefix: 'run', message: 'message' }
   ]);
 });
 
 test('runJobs given a job that uses runProcessFn runs the given command', (t) => {
   testRunJobs(t, runProcessFn, ['run'], [
-    { jobName: 'run', message: 'message' }
+    { type: 'log', prefix: 'run', message: 'message' }
   ]);
 });
 
 test('runJobs given a job that uses scriptAction runs the given command', (t) => {
   testRunJobs(t, scriptAction, ['run'], [
-    { jobName: 'run', message: 'message' }
+    { type: 'log', prefix: 'run', message: 'message' }
   ]);
 });
 
 test('runJobs given a job that uses runScriptFn runs the given command', (t) => {
   testRunJobs(t, runScriptFn, ['run'], [
-    { jobName: 'run', message: 'message' }
+    { type: 'log', prefix: 'run', message: 'message' }
   ]);
 });
 
@@ -226,7 +231,7 @@ test('runJobs given a job that uses a scriptAction to return an exit code of 1 f
   jr.runJobs(scriptActionExitCode1, ['run'])
     .catch((err) => {
       t.ok(err instanceof Error);
-      t.equal(err.message, `Job "run" exited with error: 1`);
+      t.equal(err.message, `Job "run" returned error: 1`);
       t.end();
     })
 });
@@ -236,41 +241,41 @@ test('runJobs given a job that uses a scriptAction to return an exit code of 1 f
 function testRunJobsFromFile(t, jobsFileName, jobNamesToRun, expectedLogOutput) {
   t.plan(1);
   const p = path.join(testFilesDir, jobsFileName);
-  const logger = createLogger();
-  jr.runJobsFromFile(p, jobNamesToRun, { log: logger.log })
+  const memoryLogger = makeMemoryLogger();
+  jr.runJobsFromFile(p, jobNamesToRun, { makeLogger: memoryLogger.makeLogger })
     .then(() => {
-      t.deepEqual(logger.output, expectedLogOutput);
+      t.deepEqual(memoryLogger.output, expectedLogOutput);
       t.end();
     });
 }
 
 test('runJobsFromFile given file with single job and name of that job should run that job', (t) => {
   testRunJobsFromFile(t, 'single-job.js', ['a'], [
-    { jobName: 'a', message: 'a' }
+    { type: 'log', prefix: 'a', message: 'a' }
   ]);
 });
 
 test('runJobsFromFile given file with multiple jobs and name of a job should run all needed jobs', (t) => {
   testRunJobsFromFile(t, 'diamond.js', ['d'], [
-    { jobName: 'a', message: 'a' },
-    { jobName: 'b', message: 'b' },
-    { jobName: 'c', message: 'c' },
-    { jobName: 'd', message: 'd' }
+    { type: 'log', prefix: 'a', message: 'a' },
+    { type: 'log', prefix: 'b', message: 'b' },
+    { type: 'log', prefix: 'c', message: 'c' },
+    { type: 'log', prefix: 'd', message: 'd' }
   ]);
 });
 
 test('runJobsFromFile given file with multiple jobs and names multiple jobs should run all needed jobs', (t) => {
   testRunJobsFromFile(t, 'diamond.js', ['d','e'], [
-    { jobName: 'a', message: 'a' },
-    { jobName: 'b', message: 'b' },
-    { jobName: 'c', message: 'c' },
-    { jobName: 'e', message: 'e' },
-    { jobName: 'd', message: 'd' }
+    { type: 'log', prefix: 'a', message: 'a' },
+    { type: 'log', prefix: 'b', message: 'b' },
+    { type: 'log', prefix: 'c', message: 'c' },
+    { type: 'log', prefix: 'e', message: 'e' },
+    { type: 'log', prefix: 'd', message: 'd' }
   ]);
 });
 
 test('runJobsFromFile given file with import, with results, and name of a job should run all needed jobs', (t) => {
   testRunJobsFromFile(t, 'print-config.js', ['printConfig'], [
-    { jobName: 'printConfig', message: '12345' }
+    { type: 'log', prefix: 'printConfig', message: '12345' }
   ]);
 });

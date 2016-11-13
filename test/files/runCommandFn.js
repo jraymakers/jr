@@ -1,3 +1,3 @@
 module.exports = (jr) => ({
-  run: { action: (results, log) => jr.runCommandFn('echo message')(log) }
+  run: { action: (j) => jr.runCommandFn('echo message')(j.logger) }
 });
