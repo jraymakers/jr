@@ -14,6 +14,10 @@ Support for:
 - Concurency: Using node-native [Promise API](https://promisesaplus.com/).
 - Parallelism: Using node-native [child processes](https://nodejs.org/api/child_process.html).
 
+**Note: Version 0.5 is a complete redesign and rewrite from the previous version, 0.2.3.**
+
+**Many things have changed.  If you depend on the old version, upgrading will require some work.**
+
 ## Examples
 
 ### Command Line Usage
