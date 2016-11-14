@@ -120,7 +120,7 @@ test('loadJobsFromFile given jobs file with multiple job defs should return vali
   t.end();
 });
 
-test('loadJobsFromFile given jobs file with import should return valid job definitions', (t) => {
+test.skip('loadJobsFromFile given jobs file with import should return valid job definitions', (t) => {
   const p = path.join(testFilesDir, 'print-config.js');
   const jobDefs = jr.loadJobsFromFile(p);
   t.ok(jobDefs);
@@ -274,7 +274,7 @@ test('runJobsFromFile given file with multiple jobs and names multiple jobs shou
   ]);
 });
 
-test('runJobsFromFile given file with import, with results, and name of a job should run all needed jobs', (t) => {
+test.skip('runJobsFromFile given file with import, with results, and name of a job should run all needed jobs', (t) => {
   testRunJobsFromFile(t, 'print-config.js', ['printConfig'], [
     { type: 'log', prefix: 'printConfig', message: '12345' }
   ]);

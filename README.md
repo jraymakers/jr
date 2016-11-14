@@ -12,7 +12,7 @@ Features:
 Support for:
 - Dependencies: Jobs can depend on other jobs, which are automatically run when needed.
 - Concurency: Using node-native [Promise API](https://promisesaplus.com/).
-- Paralleism: Using node-native [child processes](https://nodejs.org/api/child_process.html).
+- Parallelism: Using node-native [child processes](https://nodejs.org/api/child_process.html).
 
 ## Examples
 
@@ -134,6 +134,30 @@ Or locally:
 
 For command line use with a local installation, ensure `node_modules/.bin` is on your path.
 
+### Command Line Options
+
+```
+> jr -h
+
+  Usage: jr [options] <jobs ...>
+
+  Options:
+
+    -h, --help         output usage information
+    -V, --version      output the version number
+    -f, --file [path]  jobs file
+    -l, --list         list jobs
+    -t, --trace        log trace messages
+```
+
+When run from the command line, `jr` looks for a jobs definition file in the current directory named `jobs.js`.
+
+The `--file` option can be used to override this and load a different jobs definition file.
+
+The `--list` option displays all jobs and their needs.
+
+The `--trace` option outputs additional log messages when each job starts and stops, including timing information.
+
 ### Jobs File
 
 A jobs file is a JavaScript file containing a node module that exports a jobs definition function.
@@ -153,35 +177,6 @@ module.exports = (jr) => ({
   }
 });
 ```
-
-The `jr` argument contains the following helper functions:
-
-- `import`
-
-    This is used to include jobs from other jobs definintion files in this one.
-
-    ```javascript
-    module.exports = (jr) => ({
-      importedJob: jr.import('otherJobsFile.js', 'jobToImport')
-    });
-    ```
-
-    Note that `import` returns a job definition object,
-    which is given a local job name that can be different from the imported job.
-
-    **TODO** What about jobs needed by the imported job?
-
-- `commandAction`
-
-- `processAction`
-
-- `scriptAction`
-
-- `runCommandFn`
-
-- `runProcessFn`
-
-- `runScriptFn`
 
 ### Job Definitions
 
@@ -231,29 +226,88 @@ The argument to job action functions (commonly named `j` for "job") has the foll
 
     If a job returns a Promise, the result is the resolved value of that Promise.
 
-### Command Line Options
+### JR Argument API
 
-```
-> jr -h
+The `jr` argument to the jobs definition function contains the following helper functions:
 
-  Usage: jr [options] <jobs ...>
+- `runJobsFromFile`
 
-  Options:
+    This is used to run jobs from other jobs definintion.
 
-    -h, --help         output usage information
-    -V, --version      output the version number
-    -f, --file [path]  jobs file
-    -l, --list         list jobs
-    -t, --trace        log trace messages
-```
+    ```javascript
+    module.exports = (jr) => ({
+      runJobsFromOtherFile: {
+        action: () => jr.runJobsFromFile('otherJobsFile.js', ['jobToRun', 'otherJobToRun'])
+      }
+    });
+    ```
 
-When run from the command line, `jr` looks for a jobs definition file in the current directory named `jobs.js`.
+- `commandAction`
 
-The `--file` option can be used to override this and load a different jobs definition file.
+- `processAction`
 
-The `--list` option displays all jobs and their needs.
+- `scriptAction`
 
-The `--trace` option outputs additional log messages when each job starts and stops, including timing information.
+    These three functions are used to launch child processes.
+
+    They each return an action function and automatically pipe the output of the child process to the job's logger.
+
+    The three functions differ slightly in how they work and the arguments they take:
+
+    - `commandAction` uses the
+    [Node.js exec](https://nodejs.org/api/child_process.html#child_process_child_process_exec_command_options_callback) function
+    and takes the same arguments.  It is best for running shell commands.
+    - `processAction` uses the
+    [Node.js spawn](https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options) function
+    and takes the same arguments.  It is best for running executables that are not Node scripts.
+    - `scriptAction` uses the
+    [Node.js fork](https://nodejs.org/api/child_process.html#child_process_child_process_fork_modulepath_args_options) function
+    and takes the same arguments.  It is best for running Node scripts.
+
+    ```javascript
+    const path = require('path');
+    module.exports = (jr) => ({
+      // commandAction, like exec, takes a single string argument (and optional options):
+      runCommand: { action: jr.commandAction('echo message') },
+
+      // processAction, like spawn, takes the command and arguments separately: 
+      runProcess: { action: jr.processAction('echo', ['message']) },
+
+      // scriptAction is like processAction, but only supports Node scripts (like fork).
+      // This assumes an echo.js script is in the same directory:
+      runScript: { action: jr.scriptAction(path.join(__dirname, 'echo'), ['message']) }
+    });
+    ```
+
+- `runCommandFn`
+
+- `runProcessFn`
+
+- `runScriptFn`
+
+    These three are counterparts to the above,
+    but allow actions to use the underlying function that launches the child process
+    rather than the wrappers that create an action function.
+
+    Each of these functions creates and returns a function that,
+    when passed a logger like the one on the `j` argument to an action function,
+    launches the child process and returns a Promise for the result.
+
+    They are slightly more verbose to use, but allow for more complex use cases,
+    such as using the results passed into the action function to control how the child process is launched.
+
+    ```javascript
+    const path = require('path');
+    module.exports = (jr) => ({
+      runCommand: { action: (j) => jr.runCommandFn('echo message')(j.logger) },
+
+      runProcess: { action: (j) => jr.runProcessFn('echo', ['message'])(j.logger) },
+
+      runScript: {
+        action: (j) => jr.scriptAction(path.join(__dirname, 'echo'), ['message'])(j.logger)
+      }
+    });
+    ```
 
 ### Top Level API
 
@@ -329,6 +383,20 @@ These functions are exported by `jr`.
 
 - `loadJobsFromFile`
 
+    This loads job definitions from the given file.  It is used by `runJobsFromFile`.
+
+    The result is suitable for passing to `runJobs`.
+    
+    Note that it runs synchronously.  It uses [Node.js require](https://nodejs.org/api/globals.html#globals_require) under the covers.
+
+    ```javascript
+    const jr = require('jr');
+    const jobDefs = jr.loadJobsFromFile('jobs.js');
+    for (let jobName in jobDefs) {
+      console.log(jobName);
+    }
+    ```
+
 - `commandAction`
 
 - `processAction`
@@ -341,4 +409,22 @@ These functions are exported by `jr`.
 
 - `runScriptFn`
 
+    These six functions are identical to the ones on the `jr` argument to the jobs definition function, described above.
+
+    They are exported by the `jr` library for convenience, for defining jobs outside of a jobs file.
+
 - `makeLogger`
+
+    This function, when given a string prefix, returns a logger object like the one on the `j` argument to action functions.
+
+    It is exported by `jr` for convenience.
+
+    ```javascript
+    const logger = jr.makeLogger('customPrefix');
+    logger.log('my message');
+    ```
+
+    Output:
+    ```
+    [customPrefix] my message
+    ```
