@@ -102,7 +102,7 @@ const jobs = {
   }
 };
 
-jr.runJobs(jobs, ['displayAll'])
+jr.run(jobs, ['displayAll'])
   .then(() => {
     console.log('success!');
   })
@@ -230,14 +230,19 @@ The argument to job action functions (commonly named `j` for "job") has the foll
 
 The `jr` argument to the jobs definition function contains the following helper functions:
 
-- `runJobsFromFile`
+- `run`
 
     This is used to run jobs from other jobs definintion.
+
+    Just like the `run` function on the top-level API (below),
+    it can be given either a path to a jobs file or a jobs definition object.
+
+    (Giving a path is the intended use case, although there may be reasons to perform a nested run.)
 
     ```javascript
     module.exports = (jr) => ({
       runJobsFromOtherFile: {
-        action: () => jr.runJobsFromFile('otherJobsFile.js', ['jobToRun', 'otherJobToRun'])
+        action: () => jr.run('otherJobsFile.js', ['jobToRun', 'otherJobToRun'])
       }
     });
     ```
@@ -313,9 +318,9 @@ The `jr` argument to the jobs definition function contains the following helper 
 
 These functions are exported by `jr`.
 
-- `runJobs`
+- `run`
 
-    Given a set of job definitions and a list of job names, run all needed jobs.
+    Given a set of job definitions (or a path to a job definitions file) and a list of job names, run all needed jobs.
 
     If the given jobs shared needs, those needs will only be run once.
 
@@ -356,7 +361,7 @@ These functions are exported by `jr`.
       }
     };
 
-    jr.runJobs(jobs, ['displayAll'])
+    jr.run(jobs, ['displayAll'])
       .then(() => {
         console.log('success!');
       })
@@ -365,14 +370,12 @@ These functions are exported by `jr`.
       });
     ```
 
-- `runJobsFromFile`
-
-    Just like `runJobs`, but takes a path to a jobs definition file instead of the set of job definitions themselves.
+    Instead of a set of job definitions, `run` can be given a path to a jobs definition file:
 
     ```javascript
     const jr = require('jr');
 
-    jr.runJobsFromFile('./jobs.js', ['displayAll'])
+    jr.run('./jobs.js', ['displayAll'])
       .then(() => {
         console.log('success!');
       })
@@ -381,17 +384,17 @@ These functions are exported by `jr`.
       });
     ```
 
-- `loadJobsFromFile`
+- `load`
 
-    This loads job definitions from the given file.  It is used by `runJobsFromFile`.
+    This loads job definitions from the given file.  It is used by `run` when given a path.
 
-    The result is suitable for passing to `runJobs`.
+    The resulting job definitions is suitable for passing to `run`.
     
     Note that it runs synchronously.  It uses [Node.js require](https://nodejs.org/api/globals.html#globals_require) under the covers.
 
     ```javascript
     const jr = require('jr');
-    const jobDefs = jr.loadJobsFromFile('jobs.js');
+    const jobDefs = jr.load('./jobs.js');
     for (let jobName in jobDefs) {
       console.log(jobName);
     }

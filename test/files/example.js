@@ -32,7 +32,7 @@ const jobs = {
   }
 };
 
-jr.runJobs(jobs, ['displayAll'])
+jr.run(jobs, ['displayAll'])
   .then(() => {
     console.log('success!');
   })

@@ -24,10 +24,10 @@ function spaces(n) {
   }
 }
 
-const jobsFilePath = path.resolve(process.cwd(), program.file || './jobs.js');
+const jobsFilePath = path.resolve(process.cwd(), program.file || 'jobs.js');
 
 if (program.list) {
-  const jobDefs = jr.loadJobsFromFile(jobsFilePath);
+  const jobDefs = jr.load(jobsFilePath);
   const jobNames = Object.keys(jobDefs).sort();
   let maxJobNameLength = 0;
   jobNames.forEach((jobName) => {
@@ -57,7 +57,7 @@ if (program.args && program.args.length > 0) {
     };
   }
   try {
-    jr.runJobsFromFile(jobsFilePath, program.args, { beforeJob, afterJob })
+    jr.run(jobsFilePath, program.args, { beforeJob, afterJob })
       .then(() => {
         logger.log(`Done after ${Date.now() - startTime} ms`);
       })
