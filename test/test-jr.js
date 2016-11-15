@@ -271,3 +271,9 @@ test.skip('run given file with import, with results, and name of a job should ru
     { type: 'log', prefix: 'printConfig', message: '12345' }
   ]);
 });
+
+test('run given a chain of jobs files that run each other should run all chained jobs', (t) => {
+  testRun(t, path.join(testFilesDir, 'runChain1.js'), ['runChain1'], [
+    { type: 'log', prefix: 'runChain3', message: 'runChain3 message' },
+  ]);
+});
