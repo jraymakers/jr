@@ -232,91 +232,7 @@ The argument to job action functions (commonly named `j` for "job") has the foll
 
 ### JR Argument API
 
-The `jr` argument to the jobs definition function contains the following helper functions:
-
-- `run`
-
-    This is used to run jobs from other jobs definintion.
-
-    Just like the `run` function on the top-level API (below),
-    it can be given either a path to a jobs file or a jobs definition object.
-
-    (Giving a path is the intended use case, although there may be reasons to perform a nested run.)
-
-    ```javascript
-    module.exports = (jr) => ({
-      runJobsFromOtherFile: {
-        action: () => jr.run('otherJobsFile.js', ['jobToRun', 'otherJobToRun'])
-      }
-    });
-    ```
-
-- `commandAction`
-
-- `processAction`
-
-- `scriptAction`
-
-    These three functions are used to launch child processes.
-
-    They each return an action function and automatically pipe the output of the child process to the job's logger.
-
-    The three functions differ slightly in how they work and the arguments they take:
-
-    - `commandAction` uses the
-    [Node.js exec](https://nodejs.org/api/child_process.html#child_process_child_process_exec_command_options_callback) function
-    and takes the same arguments.  It is best for running shell commands.
-    - `processAction` uses the
-    [Node.js spawn](https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options) function
-    and takes the same arguments.  It is best for running executables that are not Node scripts.
-    - `scriptAction` uses the
-    [Node.js fork](https://nodejs.org/api/child_process.html#child_process_child_process_fork_modulepath_args_options) function
-    and takes the same arguments.  It is best for running Node scripts.
-
-    ```javascript
-    const path = require('path');
-    module.exports = (jr) => ({
-      // commandAction, like exec, takes a single string argument (and optional options):
-      runCommand: { action: jr.commandAction('echo message') },
-
-      // processAction, like spawn, takes the command and arguments separately: 
-      runProcess: { action: jr.processAction('echo', ['message']) },
-
-      // scriptAction is like processAction, but only supports Node scripts (like fork).
-      // This assumes an echo.js script is in the same directory:
-      runScript: { action: jr.scriptAction(path.join(__dirname, 'echo'), ['message']) }
-    });
-    ```
-
-- `runCommandFn`
-
-- `runProcessFn`
-
-- `runScriptFn`
-
-    These three are counterparts to the above,
-    but allow actions to use the underlying function that launches the child process
-    rather than the wrappers that create an action function.
-
-    Each of these functions creates and returns a function that,
-    when passed a logger like the one on the `j` argument to an action function,
-    launches the child process and returns a Promise for the result.
-
-    They are slightly more verbose to use, but allow for more complex use cases,
-    such as using the results passed into the action function to control how the child process is launched.
-
-    ```javascript
-    const path = require('path');
-    module.exports = (jr) => ({
-      runCommand: { action: (j) => jr.runCommandFn('echo message')(j.logger) },
-
-      runProcess: { action: (j) => jr.runProcessFn('echo', ['message'])(j.logger) },
-
-      runScript: {
-        action: (j) => jr.scriptAction(path.join(__dirname, 'echo'), ['message'])(j.logger)
-      }
-    });
-    ```
+The `jr` argument to the jobs definition function contains the same functions in the top-level API exported by `jr`.
 
 ### Top Level API
 
@@ -410,15 +326,66 @@ These functions are exported by `jr`.
 
 - `scriptAction`
 
+    These three functions are used to launch child processes.
+
+    They each return an action function and automatically pipe the output of the child process to the job's logger.
+
+    The three functions differ slightly in how they work and the arguments they take:
+
+    - `commandAction` uses the
+    [Node.js exec](https://nodejs.org/api/child_process.html#child_process_child_process_exec_command_options_callback) function
+    and takes the same arguments.  It is best for running shell commands.
+    - `processAction` uses the
+    [Node.js spawn](https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options) function
+    and takes the same arguments.  It is best for running executables that are not Node scripts.
+    - `scriptAction` uses the
+    [Node.js fork](https://nodejs.org/api/child_process.html#child_process_child_process_fork_modulepath_args_options) function
+    and takes the same arguments.  It is best for running Node scripts.
+
+    ```javascript
+    const path = require('path');
+    module.exports = (jr) => ({
+      // commandAction, like exec, takes a single string argument (and optional options):
+      runCommand: { action: jr.commandAction('echo message') },
+
+      // processAction, like spawn, takes the command and arguments separately: 
+      runProcess: { action: jr.processAction('echo', ['message']) },
+
+      // scriptAction is like processAction, but only supports Node scripts (like fork).
+      // This assumes an echo.js script is in the same directory:
+      runScript: { action: jr.scriptAction(path.join(__dirname, 'echo'), ['message']) }
+    });
+    ```
+
 - `runCommandFn`
 
 - `runProcessFn`
 
 - `runScriptFn`
 
-    These six functions are identical to the ones on the `jr` argument to the jobs definition function, described above.
+    These three are counterparts to the above,
+    but allow actions to use the underlying function that launches the child process
+    rather than the wrappers that create an action function.
 
-    They are exported by the `jr` library for convenience, for defining jobs outside of a jobs file.
+    Each of these functions creates and returns a function that,
+    when passed a logger like the one on the `j` argument to an action function,
+    launches the child process and returns a Promise for the result.
+
+    They are slightly more verbose to use, but allow for more complex use cases,
+    such as using the results passed into the action function to control how the child process is launched.
+
+    ```javascript
+    const path = require('path');
+    module.exports = (jr) => ({
+      runCommand: { action: (j) => jr.runCommandFn('echo message')(j.logger) },
+
+      runProcess: { action: (j) => jr.runProcessFn('echo', ['message'])(j.logger) },
+
+      runScript: {
+        action: (j) => jr.scriptAction(path.join(__dirname, 'echo'), ['message'])(j.logger)
+      }
+    });
+    ```
 
 - `makeLogger`
 
