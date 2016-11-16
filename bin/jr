@@ -9,7 +9,7 @@ const program = require('commander');
 const logger = jr.makeLogger('jr');
 
 program
-  .version('0.5.0')
+  .version(require('../package.json').version)
   .usage('[options] <jobs ...>')
   .option('-f, --file [path]', 'jobs file')
   .option('-l, --list', 'list jobs')
