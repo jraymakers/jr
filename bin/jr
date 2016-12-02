@@ -49,11 +49,11 @@ if (program.args && program.args.length > 0) {
   let beforeJob;
   let afterJob;
   if (program.trace) {
-    beforeJob = (jobName) => {
-      logger.info(`Starting ${jobName}`);
+    beforeJob = (runName, jobName) => {
+      logger.info(`Starting ${runName?runName+':':''}${jobName}`);
     };
-    afterJob = (jobName, time) => {
-      logger.info(`Finished ${jobName} after ${time} ms`);
+    afterJob = (runName, jobName, time) => {
+      logger.info(`Finished ${runName?runName+':':''}${jobName} after ${time} ms`);
     };
   }
   try {
@@ -62,7 +62,9 @@ if (program.args && program.args.length > 0) {
         logger.log(`Done after ${Date.now() - startTime} ms`);
       })
       .catch((err) => {
-        logger.error(`Done after ${Date.now() - startTime} ms, with ${err}`);
+        process.on('exit', () => {
+          logger.error(`Done after ${Date.now() - startTime} ms, with ${err}`);
+        });
         process.exitCode = 1;
       });
   } catch (err) {

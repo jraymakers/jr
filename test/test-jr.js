@@ -277,3 +277,9 @@ test('run given a chain of jobs files that run each other should run all chained
     { type: 'log', prefix: 'runChain3', message: 'runChain3 message' },
   ]);
 });
+
+test('run a jobs files that runs a job in another file with a run name should log that name', (t) => {
+  testRun(t, path.join(testFilesDir, 'runSingleJobFromOtherFile.js'), ['runSingleJobFromOtherFile'], [
+    { type: 'log', prefix: 'single-job:a', message: 'a' },
+  ]);
+});
