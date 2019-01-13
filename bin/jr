@@ -1,68 +1,74 @@
 #!/usr/bin/env node
 
-var _ = require('underscore');
-var program = require('commander');
-var jr = require('../');
+const startTime = Date.now();
+
+const jr = require('../');
+const path = require('path');
+const program = require('commander');
+
+const logger = jr.makeLogger('jr');
 
 program
-  .version('0.2.1')
-  .usage('[options] <jobs>')
+  .version(require('../package.json').version)
+  .usage('[options] <jobs ...>')
+  .option('-f, --file [path]', 'jobs file')
   .option('-l, --list', 'list jobs')
   .option('-t, --trace', 'log trace messages')
   .parse(process.argv);
 
 function spaces(n) {
-  if (n > 1) {
+  if (n > 0) {
     return new Array(n).join(' ');
   } else {
     return '';
   }
 }
 
+const jobsFilePath = path.resolve(process.cwd(), program.file || 'jobs.js');
+
 if (program.list) {
-  jr.load({}, function(err, result) {
-    if (err) {
-      console.log('[jr] ' + err);
-    } else {
-      var jobs = result.jobs;
-      var jobNames = _.keys(jobs).sort();
-      var maxLength = _.max(_.map(jobNames, function (jobName) {
-        return jobName.length;
-      }));
-      console.log();
-      console.log('Job:' + spaces(maxLength) + '  Needs:');
-      _.each(jobNames, function (jobName) {
-        var needs = jobs[jobName].needs;
-        if (needs) {
-          console.log('  ' + jobName + spaces(maxLength - jobName.length) + '    ' + needs.join(', '));
-        } else {
-          console.log('  ' + jobName);
-        }
-      });
-      console.log();
+  const jobDefs = jr.load(jobsFilePath);
+  const jobNames = Object.keys(jobDefs).sort();
+  let maxJobNameLength = 0;
+  jobNames.forEach((jobName) => {
+    if (jobName.length > maxJobNameLength) {
+      maxJobNameLength = jobName.length;
     }
+  })
+  console.log();
+  console.log(`Job:${spaces(maxJobNameLength)}  Needs:`);
+  console.log(`====${spaces(maxJobNameLength)}  ======`);
+  jobNames.forEach((jobName) => {
+    const needs = jobDefs[jobName].needs;
+    console.log(`${jobName}${spaces(maxJobNameLength+2 - jobName.length)}    ${needs ? needs.join(', ') : '-'}`);
   });
+  console.log();
 }
 
-var beforeJob = null;
-var afterJob = null;
-if (program.trace) {
-  beforeJob = function(cb, jobName) {
-    console.log('[jr] Running job: ' + jobName);
-    cb();
-  };
-  afterJob = function(cb, jobName) {
-    console.log('[jr] Finished job: ' + jobName);
-    cb();
-  };
-}
-
-jr.run({
-  jobNames: program.args,
-  beforeJob: beforeJob,
-  afterJob: afterJob
-}, function (err) {
-  if (err) {
-    console.log('[jr] ' + err);
+if (program.args && program.args.length > 0) {
+  let beforeJob;
+  let afterJob;
+  if (program.trace) {
+    beforeJob = (runName, jobName) => {
+      logger.info(`Starting ${runName?runName+':':''}${jobName}`);
+    };
+    afterJob = (runName, jobName, time) => {
+      logger.info(`Finished ${runName?runName+':':''}${jobName} after ${time} ms`);
+    };
   }
-});
+  try {
+    jr.run(jobsFilePath, program.args, { beforeJob, afterJob })
+      .then(() => {
+        logger.log(`Done after ${Date.now() - startTime} ms`);
+      })
+      .catch((err) => {
+        process.on('exit', () => {
+          logger.error(`Done after ${Date.now() - startTime} ms, with ${err}`);
+        });
+        process.exitCode = 1;
+      });
+  } catch (err) {
+    logger.error(`${err}`);
+    process.exitCode = 1;
+  }
+}
