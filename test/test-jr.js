@@ -63,7 +63,7 @@ function expectDef(t, actual, expected) {
     t.false(actual.action);
   }
   if (expected.needs) {
-    t.looseEqual(actual.needs, expected.needs);
+    t.deepLooseEqual(actual.needs, expected.needs);
   } else {
     t.false(actual.needs);
   }
