@@ -14,26 +14,30 @@
     "tasks"
   ],
   "author": "Jeff Raymakers",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "license": "MIT",
   "main": "./lib/jr.js",
   "bin": {
     "jr": "./bin/jr"
   },
   "dependencies": {
-    "chalk": "4.0.0",
-    "commander": "5.1.0",
-    "strip-ansi": "6.0.0"
+    "chalk": "4.1.2",
+    "commander": "8.1.0",
+    "strip-ansi": "^6.0.0"
   },
   "devDependencies": {
-    "tape": "5.0.0",
+    "tape": "5.3.1",
     "tap-dot": "2.0.0"
+  },
+  "resolutions": {
+    "trim": ">=0.0.3"
   },
   "repository": {
     "type": "git",
     "url": "git://github.com/jraymakers/jr.git"
   },
   "scripts": {
+    "preinstall": "npx npm-force-resolutions",
     "test": "node ./test/test-jr.js | tap-dot"
   }
 }
