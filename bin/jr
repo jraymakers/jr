@@ -16,6 +16,8 @@ program
   .option('-t, --trace', 'log trace messages')
   .parse(process.argv);
 
+const options = program.opts();
+
 function spaces(n) {
   if (n > 0) {
     return new Array(n).join(' ');
@@ -24,9 +26,9 @@ function spaces(n) {
   }
 }
 
-const jobsFilePath = path.resolve(process.cwd(), program.file || 'jobs.js');
+const jobsFilePath = path.resolve(process.cwd(), options.file || 'jobs.js');
 
-if (program.list) {
+if (options.list) {
   const jobDefs = jr.load(jobsFilePath);
   const jobNames = Object.keys(jobDefs).sort();
   let maxJobNameLength = 0;
@@ -48,7 +50,7 @@ if (program.list) {
 if (program.args && program.args.length > 0) {
   let beforeJob;
   let afterJob;
-  if (program.trace) {
+  if (options.trace) {
     beforeJob = (runName, jobName) => {
       logger.info(`Starting ${runName?runName+':':''}${jobName}`);
     };
